@@ -1,4 +1,4 @@
-gaedatastore
+Testing NDB interface for GAE Datastore
 ============
 
 test_scaffold.py contains some ideas for the simple test suite.
