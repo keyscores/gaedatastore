@@ -2,10 +2,12 @@ import csv
 import webapp2
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
-from google.appengine.ext import db
 from google.appengine.ext import ndb 
-import logging
 import datetime
+import logging
+
+from fact import Fact
+from correspondingfacts import CorrespondingFacts
  
 class MainHandler(webapp2.RequestHandler):
     def get(self):
@@ -67,119 +69,100 @@ def process_csv(blob_info):
             corresponding_facts.facts = fact_keys
             corresponding_facts.names = header
             corresponding_facts.put()
- 
+
 
 class Tests(webapp2.RequestHandler):
     def get(self):
         logging.info("test")
         self.response.headers['Content-Type'] = 'text/plain'
-        self.response.write("summary:")
 
-        filtered_facts = Fact.query(Fact.name == 'Sales.Vendor Identifier',
-                                    Fact.value ==  '0268_20140114_SOFA_ENGLISHTEACHER')
-        for fact in filtered_facts:
-            self.response.write(str(fact) + "\n")
-
-        # Test Corresponding Intra Fact
-        facts = Fact.query(Fact.name == "Sales.Units")
-        for fact in facts:
-            self.response.write(str(fact.getCorrespondingIntraFact("Sales.Royalty Price")) + "\n")
-
-        # Test Corresponding Inter Fact
-        fact_assault = Fact.query(Fact.name == "Sales.Vendor Identifier",
-                                  Fact.value == "0273_20140114_SOFA_ASSAULTONWALLSTREET")
-        for fact in fact_assault:
-            self.response.write(str(fact) + "\n")
-            corr_facts = fact.getCorrespondingInterFact("ComissionTax.Vendor Identifier")
-            for corr_fact in corr_facts:
-                self.response.write(str(corr_fact) + "\n")
-
-        # Test Chain
-        # Test Corresponding Inter Fact
-        self.response.write("CHAIN: \n")
-        fact_assaults = Fact.query(Fact.name == "Sales.Vendor Identifier",
-                                   Fact.value == "0273_20140114_SOFA_ASSAULTONWALLSTREET")
-        fact_assault = fact_assaults.get()
-        self.response.write(fact_assaults.get())
-
-        facts = fact_assault.getCorrespondingChainFact(["Sales.Country Code",
-                                                        "CountryRegion.Country Code",
-                                                        "CountryRegion.Region",
-                                                        "ComissionTax.Region",
-                                                        "ComissionTax.Tax Rate"])
-
+        #-----------------
+        # Test Net revenue
+        #-----------------
+        # NET_REVENUE = Sales.Units*Sales.Royalty Price
+        #result = Fact.binaryOperation("Sales.Units",
+        #                                    [["Sales.Royalty Price"]],
+        #                                    "*",
+        #                                    "NET_REVENUE")
         
-        facts2 = fact_assault.getCorrespondingChainFact(["Sales.Units",
-                                                        "Sales.Vendor Identifier",
-                                                        "ComissionTax.Vendor Identifier",
-                                                         "ComissionTax.Tax Rate"])    
+        #result2table(result, self)
+        #Fact.storeFacts(result, "NET_REVENUE")
+        #Fact.fact2Table("NET_REVENUE.NET_REVENUE", self)
 
 
-class CorrespondingFacts(ndb.Model):
-    names = ndb.StringProperty(repeated = True)
-    facts = ndb.KeyProperty(repeated = True)
+        #-----------------
+        # Test Taxes
+        #-----------------
+        # TAXES = NET_REVENUE * ComissionTax.Tax
+        link1 = ["NET_REVENUE.Country Code",
+                 "CountryRegion.Country Code",
+                 "CountryRegion.Region",
+                 "ComissionTax.Region",
+                 "ComissionTax.Tax Rate"]    
 
-    def getFact(self, name):
-        logging.info("-----------" +name)
-        indices = [i for i, elem in enumerate(self.names) if name in elem]
-        return self.facts[indices[0]].get()
+        link2 = ["NET_REVENUE.Units",
+                 "NET_REVENUE.Vendor Identifier",
+                 "ComissionTax.Vendor Identifier",
+                 "ComissionTax.Tax Rate"]  
 
-    def getCols(self,new_table):
-        cols = []
-        for name in self.names:
-            [table, col] = name.split(".")
-            col = new_table + "." + col
-            cols.append(col)
-        return cols
-
-
-class Fact(ndb.Model):
-    value = ndb.StringProperty()
-    name = ndb.StringProperty()
-    date = ndb.DateProperty()
-    corresponding_facts = ndb.KeyProperty()
-
-    def getCorrespondingIntraFact(self, corresponding_fact_name):
-        corresponding_facts = self.corresponding_facts.get()
-        corresponding_fact = corresponding_facts.getFact(corresponding_fact_name)
-        return corresponding_fact
-       
-    def getCorrespondingInterFact(self, corresponding_fact_name):
-        return  Fact.query(Fact.name == corresponding_fact_name, 
-                           Fact.value == self.value) 
+        #taxes = Fact.binaryOperation("NET_REVENUE.NET_REVENUE",[link1,link2],"*","TAXES")
+        #result2table(taxes, self)
+        #Fact.storeFacts(taxes, "TAXES")
+        #Fact.fact2Table("TAXES.TAXES", self)    
         
-    def getCorrespondingChainFact(self, chain):
-        facts = []
-        facts.append(self)
-        last_fact_name = self.name;
-        for step in chain:
-            [last_table, last_col] = last_fact_name.split(".") 
-            [next_table, next_col] = step.split(".")
-            if last_table == next_table:
-                old_facts = facts
-                facts = []
-                for fact in old_facts:
-                    new_fact =  fact.getCorrespondingIntraFact(step)
-                    facts.append(new_fact)
-            else:
-                 old_facts = facts
-                 facts = []
-                 for fact in old_facts:
-                     new_facts =  fact.getCorrespondingInterFact(step)
-                     for new_fact in new_facts:
-                         facts.append(new_fact)
-            last_fact_name = step    
-        return facts    
+        #------------------
+        # Revenue After Tax
+        #------------------
+        # REVENUE_AFTER_TAX = NET_REVENUE - TAXES
+        link1 = ["NET_REVENUE.Vendor Identifier",
+                 "TAXES.Vendor Identifier",
+                 "TAXES.TAXES"]
 
-    def __str__(self):
-        return "FACT: name:" + self.name + \
-            ", value: " + self.value + \
-            ", date: " + str(self.date) + \
-            ", facts: " + str(self.corresponding_facts)
+        link2 = ["NET_REVENUE.Country Code",
+                 "TAXES.Country Code",
+                 "TAXES.TAXES"]
 
+
+        #revenues = Fact.binaryOperation("NET_REVENUE.NET_REVENUE",
+        #                                [link1, link2],"-","REVENUE_AFTER_TAX")
+        #result2table(revenues, self)
+        #Fact.storeFacts(revenues, "REVENUE_AFTER_TAX")
+        #Fact.fact2Table("REVENUE_AFTER_TAX.REVENUE_AFTER_TAX", self)    
+
+        #------------------
+        # Test sm2
+        #------------------
+        
+        result = Fact.calculate("NET_REVENUE.NET_REVENUE","6/1/14")
+        self.response.write("\n NET_REVENUE:" + str(result) + "\n")
+
+        result = Fact.calculate("TAXES.TAXES","6/1/14")
+        self.response.write("\n TAXES:" + str(result)+ "\n")
+
+        result = Fact.calculate("REVENUE_AFTER_TAX.REVENUE_AFTER_TAX", "6/1/14")
+        self.response.write("\n REVENUE_AFTER_TAX:" + str(result)+ "\n")
+
+        #------------------
+        # KPI_Margin
+        #------------------
+        # KPI_MARGIN = REVENUE_AFTER_TAX / NET_REVENUE
+
+
+def result2table(result, web):
+    web.response.write("\n-----------TABLE------------\n")
+    [rows, header] = result
+    for col in header:
+        web.response.write(col + " | ")
+    web.response.write("\n-----------------------------------------------------------------")
+    for row in rows:
+        web.response.write("\n|")
+        for col in row:
+            web.response.write(str(col)+ " | ")
+    web.response.write("\n-----------------------------------------------------------------")
+    
  
 application = webapp2.WSGIApplication([
     ('/', MainHandler),
     ('/upload', UploadHandler),
-    ('/tests', Tests)
+    ('/tests', Tests),
 ], debug=True)
