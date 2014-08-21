@@ -1,5 +1,5 @@
 application: kinetic-physics-644
-version: stage
+version: master
 runtime: python27
 api_version: 1
 threadsafe: true
