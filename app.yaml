@@ -1,5 +1,5 @@
 application: keyscoresdatastore
-version: 1
+version: master
 runtime: python27
 api_version: 1
 threadsafe: true
