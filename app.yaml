@@ -2,7 +2,7 @@ application: kinetic-physics-644
 version: master
 runtime: python27
 api_version: 1
-threadsafe: yes
+threadsafe: true
 
 handlers:
 - url: /.*
