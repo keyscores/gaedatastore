@@ -45,64 +45,51 @@ Test Class, Totals,  original periodicity
 ##Case Aggregate	
 Measure: Units	:	Date
 			9	:	6/1/14
-			3	:	6/2/14
 Case Multiplication, without groupby, per record
 Measure: Gross Sales=(Units*Royalty_Price)	:	Date
 										18	:	6/1/14
-										6	:	6/2/14
 
 Case Multiplication, with groupby (Vendor Identifier, Product Type Idenfier,Date)
 Measure: Gross Sales=(Units*Royalty_Price)	:	Date
 										30	:	6/1/14
-										6	:	6/2/14
 
 Case Multiplication, with groupby (Date)
 Measure: Gross Sales=(Units*Royalty_Price)	:	Date
 										54	:	6/1/14
-										6	:	6/2/14
 
 Case Broadcast Multiplication, without groupby, per record
 Measure: Gross Sales=(Units*Royalty_Price)	:	Date
 										18	:	6/1/14
-										6	:	6/2/14
 
 Case Broadcast Multiplication, with groupby (Vendor Identifier, Product Type Idenfier,Date)
 Measure: Gross Sales=(Units*Royalty_Price)	:	Date
 										30	:	6/1/14
-										6	:	6/2/14
 											
 Case Broadcast Multiplication, with groupby (Date)	
 Measure: Gross Sales=(Units*Royalty_Price)	:	Date
 										54	:	6/1/14
-										6	:	6/2/14
 
 Case Addition without groupby, per record	
 Measure: Plus=(Units+Royalty_Price)	:	Date
 								15	:	6/1/14
-								5	:	6/2/14
 	
 Case Addition with groupby (Vendor Identifier, Product Type Idenfier,Date)	
 Measure: Gross Plus=(Units+Royalty_Price)	:	Date
 										15	:	6/1/14
-										5	:	6/2/14
 Case Addition with groupby (Date)	
 Measure: Gross Sales=(Units*Royalty_Price)	:	Date
 										15	:	6/1/14
-										5	:	6/2/14
 Case Broadcast Addition without groupby, per record	
 Measure: BROAD_PLUS=(Units+Comission)	:	Date
 									15	:	6/1/14
-									5	:	6/2/14
 									
 Case Broadcast Addition with groupby (Vendor Identifier, Product Type Idenfier,Date)
 Measure: BROAD_GROSS_PLUS=(Units+Comission)	:	Date
 										15	:	6/1/14
-										5	:	6/2/14
 
 Case Broadcast Addition with groupby (Date)	
 Measure: BROAD_GROSS_PLUS_DATE=(Units+Comission)	:	Date
 												15	:	6/1/14
-												5	:	6/2/14
 	
 	
 	
