@@ -65,12 +65,12 @@ Case Broadcast Multiplication, without groupby, per record
 Measure: Gross Sales=(Units*Royalty_Price)	:	Date
 										18	:	6/1/14
 										6	:	6/2/14
-	:	
+
 Case Broadcast Multiplication, with groupby (Vendor Identifier, Product Type Idenfier,Date)
 Measure: Gross Sales=(Units*Royalty_Price)	:	Date
 										30	:	6/1/14
 										6	:	6/2/14
-	:	
+											
 Case Broadcast Multiplication, with groupby (Date)	
 Measure: Gross Sales=(Units*Royalty_Price)	:	Date
 										54	:	6/1/14
