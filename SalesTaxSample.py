@@ -51,22 +51,51 @@ def addFactUsingBinaryOp(new_fact_name,
     print sql
 
 #----------------------------------------    
-def calculate(fact_name, fact_date=None):
+def calculate(fact_name, fact_date=None, dim_level=None):
     sql = "select sum(%s) from BigTable;"%(fact_name)
     if fact_date != None :
         sql = 'select sum(%s) from BigTable where DownloadDate = "%s"'%(fact_name,fact_date);
+    if dim_level != None:
+        dim_name, level_name = dim_level.split(":")
+        sql = 'select sum(%s) from BigTable where %s = "%s"'%(fact_name,dim_name, level_name);
+    if (fact_date != None) & (dim_level != None):
+        sql = 'select sum(%s) from BigTable where %s = "%s" and DownloadDate = "%s"'\
+            %(fact_name,dim_name, level_name,fact_date);         
     cursor.execute(sql)    
-    print sql
     return cursor.fetchone()[0]    
     
+#----------------------------------------    
+def calculateSm2(left_hand_fact, op, right_hand_fact, fact_date=None, dim_level=None):
+    sql = "select sum(%s) %s sum(%s) from BigTable;"%(left_hand_fact, op, right_hand_fact)
+    if fact_date != None :
+        sql = 'select sum(%s) %s sum(%s) from BigTable where DownloadDate = "%s"'\
+        %(left_hand_fact, op, right_hand_fact,fact_date);
+    if dim_level != None:
+        dim_name, level_name = dim_level.split(":")
+        sql = 'select sum(%s) %s sum(%s) from BigTable where %s = "%s"'\
+            %(left_hand_fact, op, right_hand_fact,dim_name, level_name);
+    if (fact_date != None) & (dim_level != None):
+        sql = 'select sum(%s) %s sum(%s) from BigTable where %s = "%s" and DownloadDate = "%s"'\
+            %(left_hand_fact, op, right_hand_fact,dim_name, level_name,fact_date);
+    cursor.execute(sql)    
+    return cursor.fetchone()[0]    
+
     
-data2BigTable(cursor)
-cleanUp(cursor)
-addFactUsingBinaryOp("NET_REVENUE", "Units", "RoyaltyPrice", "*") 
-addFactUsingBinaryOp("TAXES", "NET_REVENUE","TaxRate","*")
-addFactUsingBinaryOp("REVENUE_AFTER_TAX", "NET_REVENUE","TAXES","-")
-assert(calculate("NET_REVENUE","6/1/14") == 24)
-assert(calculate("TAXES","6/1/14") == 1.2576)
-assert(calculate("REVENUE_AFTER_TAX","6/1/14") == 22.7424)
+    
+#data2BigTable(cursor)
+#cleanUp(cursor)
+#addFactUsingBinaryOp("NET_REVENUE", "Units", "RoyaltyPrice", "*") 
+#addFactUsingBinaryOp("TAXES", "NET_REVENUE","TaxRate","*")
+#addFactUsingBinaryOp("REVENUE_AFTER_TAX", "NET_REVENUE","TAXES","-")
+print calculate("NET_REVENUE","6/1/14") 
+print calculate("TAXES","6/1/14") 
+print calculate("REVENUE_AFTER_TAX","6/1/14") 
+print calculate("REVENUE_AFTER_TAX",None,"Region:World") 
+print calculate("TAXES", "6/1/14","VendorId:0268_20140114_SOFA_ENGLIS") 
+print calculate("NET_REVENUE", "6/1/14","VendorId:0268_20140114_SOFA_ENGLIS")
+print calculate("TAXES", "6/1/14","Region:Latam")
+print calculate("TAXES", "6/1/14","ProductType:D")
+print calculateSm2("REVENUE_AFTER_TAX","/","NET_REVENUE", "6/1/14",None)
+print calculateSm2("REVENUE_AFTER_TAX","/","NET_REVENUE", "6/1/14","VendorId:0268_20140114_SOFA_ENGLIS")
 
 db.commit()
