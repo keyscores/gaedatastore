@@ -63,6 +63,18 @@ def calculate(fact_name, fact_date=None, dim_level=None):
             %(fact_name,dim_name, level_name,fact_date);         
     cursor.execute(sql)    
     return cursor.fetchone()[0]    
+
+#----------------------------------------    
+def calculateGroupBy(fact_name, group_by, where_str):
+    sql = "select sum(subtotal) from (select %s as subtotal from BigTable group by %s) as total;"\
+        %(fact_name, group_by)
+    if where_str != None:
+        sub_sql = "select sum(subtotal) from (select %s as subtotal " +\
+            "from BigTable where %s group by %s) as total;" 
+        sql = sub_sql%(fact_name, where_str, group_by)
+    print sql                 
+    cursor.execute(sql)    
+    return cursor.fetchone()[0]
     
 #----------------------------------------    
 def calculateSm2(left_hand_fact, op, right_hand_fact, fact_date=None, dim_level=None):
@@ -97,5 +109,71 @@ print calculate("TAXES", "6/1/14","Region:Latam")
 print calculate("TAXES", "6/1/14","ProductType:D")
 print calculateSm2("REVENUE_AFTER_TAX","/","NET_REVENUE", "6/1/14",None)
 print calculateSm2("REVENUE_AFTER_TAX","/","NET_REVENUE", "6/1/14","VendorId:0268_20140114_SOFA_ENGLIS")
+
+print "NEW TEST CASES"
+print "(1)" + str(calculate("Units","6/1/14"))
+print "-------*-----------"
+print "(2)" + str(calculate("NET_REVENUE","6/1/14"))
+print "(3)" + str(calculateGroupBy("sum(Units)* sum(RoyaltyPrice)",
+                                   "VendorId, ProductType, DownloadDate"," id < 5 "))
+print "(4)" + str(calculateGroupBy("sum(Units)* sum(RoyaltyPrice)",
+                                   "DownloadDate"," id < 5 "))
+print "-------+-----------"
+print "(5)" + str(calculate("Units + RoyaltyPrice","6/1/14"))
+print "(6)" + str(calculateGroupBy("sum(Units)+ sum(RoyaltyPrice)",
+                                   "VendorId, ProductType, DownloadDate"," id < 5 "))
+print "(7)" + str(calculateGroupBy("sum(Units)+ sum(RoyaltyPrice)",
+                                   "DownloadDate"," id < 5 "))
+
+print "INTERTABLE *"
+print "(8 ???)" + str(calculate("RoyaltyPrice*TaxRate","6/1/14"))
+print "(9)" + str(calculateGroupBy("sum(RoyaltyPrice) * sum(TaxRate)",
+                                   "VendorId, ProductType, DownloadDate"," id < 5 "))
+print "(10)" + str(calculateGroupBy("sum(RoyaltyPrice) * sum(TaxRate*RoyaltyPrice)",
+                                   "DownloadDate"," id < 5 "))
+print "INTERTABLE +"
+print "(11)" + str(calculate("RoyaltyPrice+TaxRate","6/1/14"))
+print "(12)" + str(calculateGroupBy("sum(RoyaltyPrice) + sum(TaxRate)",
+                                   "VendorId, ProductType, DownloadDate"," id < 5 "))
+print "(13)" + str(calculateGroupBy("sum(RoyaltyPrice) + sum(TaxRate)",
+                                   "DownloadDate"," id < 5 "))
+print "CHAINED +"
+print "(14)" + str(calculate("REVENUE_AFTER_TAX","6/1/14"))
+print calculateSm2("REVENUE_AFTER_TAX","/","NET_REVENUE", "6/1/14",None)
+print "16 todo)" 
+
+print "-------------FILTER--------------------"
+print "(1)" + str(calculate("Units", "6/1/14","VendorId:0268_20140114_SOFA_ENGLIS"))
+print "-------*-----------"
+print "(2)" + str(calculate("NET_REVENUE","6/1/14","VendorId:0268_20140114_SOFA_ENGLIS"))
+print "(3)" + str(calculateGroupBy("sum(Units)* sum(RoyaltyPrice)",
+                                   "VendorId, ProductType, DownloadDate"," id < 5 and VendorId='0268_20140114_SOFA_ENGLIS' "))
+print "(4)" + str(calculateGroupBy("sum(Units)* sum(RoyaltyPrice)",
+                                   "DownloadDate"," id < 5 and VendorId='0268_20140114_SOFA_ENGLIS'"))
+print "-------+-----------"
+print "(5)" + str(calculate("Units + RoyaltyPrice","6/1/14","VendorId:0268_20140114_SOFA_ENGLIS"))
+print "(6)" + str(calculateGroupBy("sum(Units)+ sum(RoyaltyPrice)",
+                                   "VendorId, ProductType, DownloadDate"," id < 5 and VendorId='0268_20140114_SOFA_ENGLIS' "))
+print "(7)" + str(calculateGroupBy("sum(Units)+ sum(RoyaltyPrice)",
+                                   "DownloadDate"," id < 5 and VendorId='0268_20140114_SOFA_ENGLIS' "))
+
+print "INTERTABLE *"
+print "(8 ???)" + str(calculate("RoyaltyPrice*TaxRate","6/1/14","VendorId:0268_20140114_SOFA_ENGLIS"))
+print "(9)" + str(calculateGroupBy("sum(RoyaltyPrice) * sum(TaxRate)",
+                                   "VendorId, ProductType, DownloadDate"," id < 5 and VendorId='0268_20140114_SOFA_ENGLIS' "))
+print "(9)" + str(calculateGroupBy("sum(RoyaltyPrice) * sum(TaxRate*RoyaltyPrice)",
+                                   "DownloadDate"," id < 5 and VendorId='0268_20140114_SOFA_ENGLIS' "))
+print "INTERTABLE +"
+print "(11)" + str(calculate("RoyaltyPrice+TaxRate","6/1/14","VendorId:0268_20140114_SOFA_ENGLIS"))
+print "(12)" + str(calculateGroupBy("sum(RoyaltyPrice) + sum(TaxRate)",
+                                   "VendorId, ProductType, DownloadDate"," id < 5 and VendorId='0268_20140114_SOFA_ENGLIS' "))
+print "(13)" + str(calculateGroupBy("sum(RoyaltyPrice) + sum(TaxRate)",
+                                   "DownloadDate"," id < 5 and VendorId='0268_20140114_SOFA_ENGLIS' "))
+
+
+print "CHAINED +"
+print "(14)" + str(calculate("REVENUE_AFTER_TAX","6/1/14","VendorId:0268_20140114_SOFA_ENGLIS"))
+print calculateSm2("REVENUE_AFTER_TAX","/","NET_REVENUE", "6/1/14","VendorId:0268_20140114_SOFA_ENGLIS")
+print "16 todo)" 
 
 db.commit()
